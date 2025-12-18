@@ -1,65 +1,75 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
-export default function Home() {
+export default function Pokedex() {
+  const [pokemon, setPokemon] = useState([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPokemon = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/pokemon?q=${search}`);
+        const data = await res.json();
+        setPokemon(data);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    const timer = setTimeout(fetchPokemon, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="p-8 bg-gray-50 min-h-screen text-slate-900">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-5xl font-black text-center text-red-600 mb-2">PokéDex</h1>
+        <p className="text-center text-slate-500 mb-8 font-medium">Search and filter your favorite Pokémon</p>
+        
+        <div className="max-w-md mx-auto mb-12">
+          <input 
+            type="text" 
+            placeholder="Search by name or type (e.g. Fire)..."
+            className="w-full p-4 rounded-2xl shadow-md border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none text-slate-800 placeholder-slate-400 bg-white"
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {loading ? (
+          <div className="text-center py-20 text-slate-400 font-medium">Searching the tall grass...</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {pokemon.map(p => (
+              <Link href={`/pokemon/${p.name}`} key={p.id}>
+                <div className="bg-white p-6 rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 flex flex-col items-center group">
+                  <div className="bg-slate-50 rounded-2xl p-4 mb-4 group-hover:bg-red-50 transition-colors">
+                    <img src={p.image} alt={p.name} className="w-32 h-32 object-contain drop-shadow-md" />
+                  </div>
+                  <p className="text-slate-400 text-xs font-bold mb-1">#{p.id.toString().padStart(3, '0')}</p>
+                  <h2 className="text-2xl font-bold capitalize text-slate-800">{p.name}</h2>
+                  <div className="flex gap-2 mt-4">
+                    {p.types.map(t => (
+                      <span key={t} className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] rounded-lg font-black uppercase tracking-wider">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {!loading && pokemon.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-slate-400 text-xl font-semibold">No Pokémon found matching "{search}"</p>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
