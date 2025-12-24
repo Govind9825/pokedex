@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Pokemon from '@/lib/models/Pokemon';
-import { pipeline } from '@xenova/transformers';
+import { pipeline, env } from '@xenova/transformers';
+
+env.allowLocalModels = false;
+env.useBrowserCache = false;
+env.remoteModels = true;
+env.backends.onnx.wasm.proxy = false;
 
 export async function GET(request) {
   await dbConnect();
@@ -23,7 +28,7 @@ export async function GET(request) {
       const pokemons = await Pokemon.aggregate([
         {
           "$vectorSearch": {
-            "index": "default",
+            "index": "default", 
             "path": "vector",
             "queryVector": queryVector,
             "numCandidates": 151,
@@ -32,9 +37,7 @@ export async function GET(request) {
         }
       ]);
 
-      if (pokemons.length > 0) {
-        return NextResponse.json(pokemons);
-      }
+      if (pokemons.length > 0) return NextResponse.json(pokemons);
 
       const fallback = await Pokemon.find({
         $or: [
@@ -53,7 +56,10 @@ export async function GET(request) {
   } catch (error) {
     console.error("Semantic Search Error:", error);
     const lastResort = await Pokemon.find({
-      name: { $regex: query || '', $options: 'i' }
+      $or: [
+        { name: { $regex: query || '', $options: 'i' } },
+        { description: { $regex: query || '', $options: 'i' } }
+      ]
     }).limit(151);
     return NextResponse.json(lastResort);
   }
