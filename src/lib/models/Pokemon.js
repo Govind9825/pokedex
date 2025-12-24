@@ -11,9 +11,17 @@ const PokemonSchema = new mongoose.Schema({
   defense: Number,
   speed: Number,
   image: String,
+  description: String, 
+  vector: [Number]
 });
 
-// Full-text index for the search functionality
-PokemonSchema.index({ name: 'text', types: 'text' });
+
+PokemonSchema.index({ 
+  name: 'text', 
+  types: 'text', 
+  description: 'text' 
+}, {
+  weights: { name: 10, types: 5, description: 1 } 
+});
 
 export default mongoose.models.Pokemon || mongoose.model('Pokemon', PokemonSchema);
