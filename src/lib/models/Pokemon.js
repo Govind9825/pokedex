@@ -11,8 +11,7 @@ const PokemonSchema = new mongoose.Schema({
   defense: Number,
   speed: Number,
   image: String,
-  description: String, 
-  vector: [Number]
+  description: String,
 });
 
 
